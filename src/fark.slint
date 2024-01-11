@@ -1,0 +1,84 @@
+import { GroupBox, TabWidget, VerticalBox, HorizontalBox, Button, LineEdit, GridBox, ListView, StandardTableView } from "std-widgets.slint";
+
+export component Fark inherits Window {
+    title: "Fark";
+    width: 600px;
+    height: 500px;
+    callback show-open-dialog;
+    callback search;
+    callback push_row;
+
+    in property file_name <=> file_name.text;
+    in property path <=> path.text;
+    in property<[[StandardListViewItem]]> rows: [];
+
+    GroupBox {
+        preferred_width: 600px;
+        preferred_height: 500px;
+        TabWidget {
+            Tab {
+                title: @tr("Name/Location");
+                GridBox {
+                    Row {
+                        HorizontalBox {
+                            Text {
+                                vertical-alignment: center;
+                                horizontal-alignment: left;
+                                text: @tr("File Name:");
+                                width: 15%;
+                            }
+                            
+                            file_name := LineEdit {
+                                width: 75%;
+                            }
+                        }
+                    }
+
+                    Row {
+                        HorizontalBox {
+                            Text {
+                                vertical-alignment: center;
+                                horizontal-alignment: left;
+                                text: @tr("Location:");
+                                width: 15%;
+                            }
+                            path := LineEdit {
+                                width: 60%;
+                                
+                            }
+                            open_button := Button {
+                                text: @tr("Browse...");
+                                clicked => { root.show-open-dialog(); }
+                                width: 15%;
+                            }
+                        }
+                    }
+
+                    Row {
+                        HorizontalBox {
+                            alignment: center;
+                            search := Button {
+                                text: "Search";
+                                clicked => { root.search(); }
+                                width: 20%;
+                            }
+                        }
+                    }
+
+                    Row {
+                        list := StandardTableView {
+                            width: 90%;
+                            height: 60%;
+                            columns: [
+                                // { title: "Name" },
+                                // { title: "Type" },
+                                { title: "Path" },
+                            ];
+                            rows: root.rows;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
