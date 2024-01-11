@@ -47,8 +47,8 @@ impl FdCommand {
         {
             let stdout = cmd
                 .stdout
-                .as_mut()
-                .expect("Unexpected error: can not get stdout, maybe you environment is broken?");
+                .take()
+                .unwrap();
 
             let stdout_reader = BufReader::new(stdout);
             let stdout_lines = stdout_reader.lines();
