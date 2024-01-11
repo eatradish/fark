@@ -6,11 +6,13 @@ export component Fark inherits Window {
     height: 500px;
     callback show-open-dialog;
     callback search;
-    callback push_row;
+    callback current-row-changed(int);
+
 
     in property file_name <=> file_name.text;
     in property path <=> path.text;
     in property<[[StandardListViewItem]]> rows: [];
+    in-out property current-row <=> list.current-row;
 
     GroupBox {
         preferred_width: 600px;
@@ -75,6 +77,7 @@ export component Fark inherits Window {
                                 { title: "Path" },
                             ];
                             rows: root.rows;
+                            current-row-changed(int) => { current-row-changed(int); }
                         }
                     }
                 }
