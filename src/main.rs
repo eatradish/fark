@@ -65,6 +65,7 @@ fn main() {
                                 rows.push(items.clone().into());
                             })
                             .unwrap();
+                        thread::sleep(Duration::from_millis(1));
                     })
                     .unwrap();
                 });
