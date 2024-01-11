@@ -91,13 +91,11 @@ fn main() {
         let ui_week = ui_week.unwrap();
         let rows = ui_week.get_rows();
 
-        
-
         ui_week.on_current_row_changed(move |i| {
             let entry = rows.row_data(i as usize).expect("1");
             let entry = entry.row_data(0).expect("2");
             let path = &entry.text;
-            open::that(path.to_string()).expect("3");
+            let _ = open::that_detached(path.to_string());
         });
     }
 
