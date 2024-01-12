@@ -9,6 +9,7 @@ use slint::Model;
 use slint::{ModelRc, StandardListViewItem, VecModel};
 use std::process::Command;
 use std::sync::atomic::{AtomicI32, Ordering};
+use std::sync::mpsc;
 use std::time::Duration;
 use std::{env, rc::Rc, thread};
 use tray::FARK_PROCESS;
@@ -35,8 +36,7 @@ fn start_process(command_args: Vec<String>) -> Result<()> {
 }
 
 pub fn open_app() {
-    let mut args = std::env::args().collect::<Vec<_>>();
-    args.remove(0);
+    let mut args = std::env::args().skip(1).collect::<Vec<_>>();
     args.push("window".to_string());
 
     let _ = start_process(args);
@@ -68,6 +68,7 @@ fn fark_main() {
     ui.set_rows(rows_rc);
 
     let ui_week = ui.as_weak();
+    let (tx, rx) = mpsc::channel();
     ui.on_search(move || {
         let ui = ui_week.unwrap();
         let rows = ui.get_rows();
@@ -96,38 +97,36 @@ fn fark_main() {
         }
 
         let ui_week = ui.as_weak();
+
+        let tx = tx.clone();
         thread::spawn(move || {
             let ui_week_clone = ui_week.clone();
             let ui_week_clone_2 = ui_week.clone();
-            let mut child = fd
-                .run(move |path| {
-                    let path = path.to_string();
-                    ui_week_clone
-                        .upgrade_in_event_loop(move |w| {
-                            if !w.get_started() {
-                                return;
-                            }
 
-                            let rows = w.get_rows();
-                            let rows_rc = rows.clone();
-                            let rows = rows_rc
-                                .as_any()
-                                .downcast_ref::<VecModel<slint::ModelRc<StandardListViewItem>>>()
-                                .expect("We know we set a VecModel earlier");
+            fd.run(tx, move |path| {
+                let path = path.to_string();
+                ui_week_clone
+                    .upgrade_in_event_loop(move |w| {
+                        if !w.get_started() {
+                            return;
+                        }
+                        let rows = w.get_rows();
+                        let rows_rc = rows.clone();
+                        let rows = rows_rc
+                            .as_any()
+                            .downcast_ref::<VecModel<slint::ModelRc<StandardListViewItem>>>()
+                            .expect("We know we set a VecModel earlier");
 
-                            let items = Rc::new(VecModel::default());
-                            items.push(StandardListViewItem::from(slint::format!("{}", path)));
-                            rows.push(items.clone().into());
-                        })
-                        .unwrap();
-                    thread::sleep(Duration::from_millis(1));
-                })
-                .unwrap();
+                        let items = Rc::new(VecModel::default());
+                        items.push(StandardListViewItem::from(slint::format!("{}", path)));
+                        rows.push(items.clone().into());
+                    })
+                    .unwrap();
+                thread::sleep(Duration::from_millis(1));
+            })
+            .unwrap();
 
-            let id = child.id();
-            FD_PID.store(id as i32, Ordering::Relaxed);
-            let _ = child.wait();
-            FD_PID.store(-1, Ordering::Relaxed);
+            FD_PID.store(-1, Ordering::SeqCst);
             ui_week_clone_2
                 .upgrade_in_event_loop(|w| w.set_started(false))
                 .unwrap();
@@ -148,18 +147,19 @@ fn fark_main() {
     }
 
     let ui_week = ui.as_weak();
+    let ui_week_clone = ui_week.clone();
     {
         let ui_week = ui_week.unwrap();
         ui_week.on_stop_search(move || {
-            let pid = FD_PID.load(Ordering::Relaxed);
-
-            if pid > -1 {
-                let pid = Pid::from_raw(pid).expect("Pid is empty?");
-                let _ = kill_process(pid, Signal::Term);
+            let pid = FD_PID.load(Ordering::SeqCst);
+            let pid = Pid::from_raw(pid).unwrap();
+            kill_process(pid, Signal::Term).unwrap();
+            if rx.recv().is_ok() {
+                ui_week_clone
+                    .upgrade_in_event_loop(|w| w.set_started(false))
+                    .unwrap();
             }
-
-            FD_PID.store(-1, Ordering::Relaxed);
-        })
+        });
     }
 
     ui.run().unwrap();

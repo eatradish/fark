@@ -11,18 +11,17 @@ use tray_icon::{
     menu::{Menu, MenuEvent, MenuItem},
     TrayIconBuilder, TrayIconEvent,
 };
+use tray_icon::Icon;
 
 use crate::open_app;
 
 pub static FARK_PROCESS: Lazy<Arc<Mutex<Vec<u32>>>> =
     Lazy::new(|| Arc::new(Mutex::new(Vec::new())));
 
-// use crate::open_app;
-
-// const ICON: &[u8] = include_bytes!("../icon.png");
+const ICON: &[u8] = include_bytes!("../icon.png");
 
 pub fn main() -> Result<()> {
-    // let icon = load_icon()?;
+    let icon = load_icon()?;
 
     let event_loop = EventLoopBuilder::new().build();
 
@@ -80,5 +79,6 @@ pub fn main() -> Result<()> {
 //         let rgba = image.into_raw();
 //         (rgba, width, height)
 //     };
+
 //     Ok(tray_icon::Icon::from_rgba(icon_rgba, icon_width, icon_height)?)
 // }

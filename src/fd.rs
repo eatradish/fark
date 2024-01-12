@@ -1,9 +1,17 @@
 use std::{
     io::{BufRead, BufReader},
-    process::{Child, Command, Stdio},
+    process::{Command, Stdio},
+    sync::{
+        atomic::Ordering,
+        mpsc::{self, Sender},
+        Arc, Mutex,
+    },
+    thread,
 };
 
 use eyre::Result;
+
+use crate::FD_PID;
 
 pub struct FdCommand {
     args: Vec<String>,
@@ -35,22 +43,37 @@ impl FdCommand {
         self.args.push(name.to_string());
     }
 
-    pub fn run<F: Fn(&str)>(&mut self, cb: F) -> Result<Child> {
-        let mut cmd = Command::new("fd")
+    pub fn run<F: Fn(&str)>(&mut self, tx: Sender<u8>, cb: F) -> Result<()> {
+        let cmd = Command::new("fd")
             .args(&self.args)
             .stdout(Stdio::piped())
             .spawn()?;
         {
-            let stdout = cmd.stdout.take().unwrap();
+            FD_PID.store(cmd.id() as i32, Ordering::SeqCst);
+            let stdout = Arc::new(Mutex::new(cmd.stdout));
+            let stdout_clone = stdout.clone();
 
-            let stdout_reader = BufReader::new(stdout);
-            let stdout_lines = stdout_reader.lines();
+            thread::spawn(move || loop {
+                if FD_PID.load(Ordering::SeqCst) == -1 {
+                    let mut stdout = stdout_clone.lock().unwrap();
+                    drop(stdout.take());
+                    dbg!(1);
+                    tx.send(0).unwrap();
+                    break;
+                }
+            });
 
-            for i in stdout_lines.flatten() {
-                cb(&i);
+            {
+                let mut stdout = stdout.lock().unwrap();
+                let stdout_reader = BufReader::new(stdout.as_mut().unwrap());
+                let stdout_lines = stdout_reader.lines();
+
+                for i in stdout_lines.flatten() {
+                    cb(&i);
+                }
             }
         }
 
-        Ok(cmd)
+        Ok(())
     }
 }
