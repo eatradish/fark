@@ -35,10 +35,7 @@ impl FdCommand {
         self.args.push(name.to_string());
     }
 
-    pub fn run<F>(&mut self, cb: F) -> Result<Child>
-    where
-        F: Fn(&str),
-    {
+    pub fn run<F: Fn(&str)>(&mut self, cb: F) -> Result<Child> {
         let mut cmd = Command::new("fd")
             .args(&self.args)
             .stdout(Stdio::piped())

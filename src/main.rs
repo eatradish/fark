@@ -62,6 +62,12 @@ fn main() {
         fd.set_path(&path);
         fd.file_name(&name);
 
+        if ui.get_glob() {
+            fd.glob(true);
+        } else {
+            fd.glob(false);
+        }
+
         let ui_week = ui.as_weak();
         thread::spawn(move || {
             let ui_week_clone = ui_week.clone();
