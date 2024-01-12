@@ -2,8 +2,7 @@ use std::{
     io::{BufRead, BufReader},
     process::{Command, Stdio},
     sync::{
-        atomic::Ordering,
-        mpsc::{self, Sender},
+        atomic::{Ordering, AtomicBool},
         Arc, Mutex,
     },
     thread,
@@ -12,6 +11,7 @@ use std::{
 use eyre::Result;
 
 use crate::FD_PID;
+pub static USING_STDOUT: AtomicBool = AtomicBool::new(false);
 
 pub struct FdCommand {
     args: Vec<String>,
@@ -43,12 +43,13 @@ impl FdCommand {
         self.args.push(name.to_string());
     }
 
-    pub fn run<F: Fn(&str)>(&mut self, tx: Sender<u8>, cb: F) -> Result<()> {
+    pub fn run<F: Fn(&str)>(&mut self, cb: F) -> Result<()> {
         let cmd = Command::new("fd")
             .args(&self.args)
             .stdout(Stdio::piped())
             .spawn()?;
         {
+            USING_STDOUT.store(true, Ordering::Relaxed);
             FD_PID.store(cmd.id() as i32, Ordering::SeqCst);
             let stdout = Arc::new(Mutex::new(cmd.stdout));
             let stdout_clone = stdout.clone();
@@ -56,9 +57,8 @@ impl FdCommand {
             thread::spawn(move || loop {
                 if FD_PID.load(Ordering::SeqCst) == -1 {
                     let mut stdout = stdout_clone.lock().unwrap();
+                    USING_STDOUT.store(false, Ordering::Relaxed);
                     drop(stdout.take());
-                    dbg!(1);
-                    tx.send(0).unwrap();
                     break;
                 }
             });

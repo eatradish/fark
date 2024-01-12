@@ -2,6 +2,7 @@ mod fd;
 mod tray;
 
 use eyre::Result;
+use fd::USING_STDOUT;
 use rfd::FileDialog;
 use rustix::process::{kill_process, Signal};
 use rustix::thread::Pid;
@@ -9,7 +10,6 @@ use slint::Model;
 use slint::{ModelRc, StandardListViewItem, VecModel};
 use std::process::Command;
 use std::sync::atomic::{AtomicI32, Ordering};
-use std::sync::mpsc;
 use std::time::Duration;
 use std::{env, rc::Rc, thread};
 use tray::FARK_PROCESS;
@@ -68,7 +68,6 @@ fn fark_main() {
     ui.set_rows(rows_rc);
 
     let ui_week = ui.as_weak();
-    let (tx, rx) = mpsc::channel();
     ui.on_search(move || {
         let ui = ui_week.unwrap();
         let rows = ui.get_rows();
@@ -97,13 +96,11 @@ fn fark_main() {
         }
 
         let ui_week = ui.as_weak();
-
-        let tx = tx.clone();
         thread::spawn(move || {
             let ui_week_clone = ui_week.clone();
             let ui_week_clone_2 = ui_week.clone();
 
-            fd.run(tx, move |path| {
+            fd.run(move |path| {
                 let path = path.to_string();
                 ui_week_clone
                     .upgrade_in_event_loop(move |w| {
@@ -153,11 +150,19 @@ fn fark_main() {
         ui_week.on_stop_search(move || {
             let pid = FD_PID.load(Ordering::SeqCst);
             let pid = Pid::from_raw(pid).unwrap();
-            kill_process(pid, Signal::Term).unwrap();
-            if rx.recv().is_ok() {
-                ui_week_clone
-                    .upgrade_in_event_loop(|w| w.set_started(false))
-                    .unwrap();
+            thread::spawn(move || {
+                let _ = kill_process(pid, Signal::Term);
+            });
+
+            FD_PID.store(-1, Ordering::SeqCst);
+
+            loop {
+                if !USING_STDOUT.load(Ordering::Relaxed) {
+                    ui_week_clone
+                        .upgrade_in_event_loop(|w| w.set_started(false))
+                        .unwrap();
+                    break;
+                }
             }
         });
     }
