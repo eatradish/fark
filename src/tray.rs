@@ -66,7 +66,7 @@ pub fn main() -> Result<()> {
             }
         }
 
-        // Does not work, see https://github.com/tauri-apps/tray-icon/issues/104
+        // FIXME: Does not work, see https://github.com/tauri-apps/tray-icon/issues/104
         if let Ok(event) = tray_channel.try_recv() {
             println!("tray event: {:?}", event);
         }
