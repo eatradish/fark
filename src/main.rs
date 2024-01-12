@@ -11,7 +11,7 @@ use std::process::Command;
 use std::sync::atomic::{AtomicI32, Ordering};
 use std::time::Duration;
 use std::{env, rc::Rc, thread};
-use tray::PROCESS;
+use tray::FARK_PROCESS;
 
 use crate::fd::FdCommand;
 
@@ -25,7 +25,7 @@ fn start_process(command_args: Vec<String>) -> Result<()> {
 
     // 启动新进程并传递命令行参数
     let child = Command::new(current_exe).args(&command_args).spawn()?;
-    let process = PROCESS.clone();
+    let process = FARK_PROCESS.clone();
     {
         let mut process = process.lock().unwrap();
         process.push(child.id());
@@ -40,21 +40,6 @@ pub fn open_app() {
     args.push("window".to_string());
 
     let _ = start_process(args);
-}
-
-fn main() {
-    let mut args = std::env::args().skip(1);
-
-    if args.next().is_some() {
-        fark_main();
-        return;
-    }
-
-    //打开app
-    open_app();
-
-    //打开图标
-    tray::main().unwrap();
 }
 
 fn fark_main() {
@@ -178,4 +163,19 @@ fn fark_main() {
     }
 
     ui.run().unwrap();
+}
+
+fn main() {
+    let mut args = std::env::args().skip(1);
+
+    if args.next().is_some() {
+        fark_main();
+        return;
+    }
+
+    //打开app
+    open_app();
+
+    //打开图标
+    tray::main().unwrap();
 }
