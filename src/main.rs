@@ -119,7 +119,7 @@ fn fark_main() {
                         rows.push(items.clone().into());
                     })
                     .unwrap();
-                thread::sleep(Duration::from_nanos(1200));
+                thread::sleep(Duration::from_nanos(2400));
             })
             .unwrap();
 
