@@ -11,6 +11,7 @@ use std::process::Command;
 use std::sync::atomic::{AtomicI32, Ordering};
 use std::time::Duration;
 use std::{env, rc::Rc, thread};
+use tray::PROCESS;
 
 use crate::fd::FdCommand;
 
@@ -23,7 +24,12 @@ fn start_process(command_args: Vec<String>) -> Result<()> {
     let current_exe = std::env::current_exe()?;
 
     // 启动新进程并传递命令行参数
-    Command::new(current_exe).args(&command_args).spawn()?;
+    let child = Command::new(current_exe).args(&command_args).spawn()?;
+    let process = PROCESS.clone();
+    {
+        let mut process = process.lock().unwrap();
+        process.push(child.id());
+    }
 
     Ok(())
 }

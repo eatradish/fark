@@ -1316,6 +1316,7 @@ name = "fark"
 version = "0.1.0"
 dependencies = [
  "eyre",
+ "once_cell",
  "open",
  "rfd",
  "rustix 0.38.28",
