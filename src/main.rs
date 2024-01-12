@@ -1,14 +1,19 @@
 mod fd;
 
 use rfd::FileDialog;
+use rustix::process::{kill_process, Signal};
+use rustix::thread::Pid;
 use slint::Model;
 use slint::{ModelRc, StandardListViewItem, VecModel};
+use std::sync::atomic::{AtomicI32, Ordering};
 use std::time::Duration;
 use std::{env, rc::Rc, thread};
 
 use crate::fd::FdCommand;
 
 slint::slint!(import { Fark } from "./src/fark.slint";);
+
+static FD_PID: AtomicI32 = AtomicI32::new(-1);
 
 fn main() {
     let ui = Fark::new().unwrap();
@@ -36,9 +41,9 @@ fn main() {
     ui.set_rows(rows_rc);
 
     let ui_week = ui.as_weak();
-    let ui_week_clone = ui_week.clone();
     ui.on_search(move || {
-        let rows = ui_week_clone.unwrap().get_rows();
+        let ui = ui_week.unwrap();
+        let rows = ui.get_rows();
         let rows_rc = ModelRc::from(rows.clone());
         let rows = rows_rc
             .as_any()
@@ -51,39 +56,49 @@ fn main() {
             }
         }
 
-        ui_week
-            .upgrade_in_event_loop(move |ui_week| {
-                let name = ui_week.get_file_name();
-                let path = ui_week.get_path();
-                let mut fd = FdCommand::new();
-                fd.set_path(&path);
-                fd.file_name(&name);
+        let name = ui.get_file_name();
+        let path = ui.get_path();
+        let mut fd = FdCommand::new();
+        fd.set_path(&path);
+        fd.file_name(&name);
 
-                let ui_week = ui_week.as_weak();
-                thread::spawn(move || {
-                    let ui_week_clone = ui_week.clone();
-                    fd.run(move |path| {
-                        let path = path.to_string();
-                        ui_week_clone
-                            .upgrade_in_event_loop(move |w| {
-                                let rows = w.get_rows();
-                                let rows_rc = ModelRc::from(rows.clone());
-                                let rows = rows_rc
-                                    .as_any()
-                                    .downcast_ref::<VecModel<slint::ModelRc<StandardListViewItem>>>(
-                                    )
-                                    .expect("We know we set a VecModel earlier");
-                                let items = Rc::new(VecModel::default());
-                                items.push(StandardListViewItem::from(slint::format!("{}", path)));
-                                rows.push(items.clone().into());
-                            })
-                            .unwrap();
-                        thread::sleep(Duration::from_millis(1));
-                    })
-                    .unwrap();
-                });
-            })
-            .unwrap();
+        let ui_week = ui.as_weak();
+        thread::spawn(move || {
+            let ui_week_clone = ui_week.clone();
+            let ui_week_clone_2 = ui_week.clone();
+            let mut child = fd
+                .run(move |path| {
+                    let path = path.to_string();
+                    ui_week_clone
+                        .upgrade_in_event_loop(move |w| {
+                            if !w.get_started() {
+                                return;
+                            }
+
+                            let rows = w.get_rows();
+                            let rows_rc = ModelRc::from(rows.clone());
+                            let rows = rows_rc
+                                .as_any()
+                                .downcast_ref::<VecModel<slint::ModelRc<StandardListViewItem>>>()
+                                .expect("We know we set a VecModel earlier");
+
+                            let items = Rc::new(VecModel::default());
+                            items.push(StandardListViewItem::from(slint::format!("{}", path)));
+                            rows.push(items.clone().into());
+                        })
+                        .unwrap();
+                    thread::sleep(Duration::from_millis(1));
+                })
+                .unwrap();
+
+            let id = child.id();
+            FD_PID.store(id as i32, Ordering::Relaxed);
+            let _ = child.wait();
+            FD_PID.store(-1, Ordering::Relaxed);
+            ui_week_clone_2
+                .upgrade_in_event_loop(|w| w.set_started(false))
+                .unwrap();
+        });
     });
 
     let ui_week = ui.as_weak();
@@ -97,6 +112,21 @@ fn main() {
             let path = &entry.text;
             let _ = open::that_detached(path.to_string());
         });
+    }
+
+    let ui_week = ui.as_weak();
+    {
+        let ui_week = ui_week.unwrap();
+        ui_week.on_stop_search(move || {
+            let pid = FD_PID.load(Ordering::Relaxed);
+
+            if pid > -1 {
+                let pid = Pid::from_raw(pid).expect("Pid is empty?");
+                let _ = kill_process(pid, Signal::Term);
+            }
+
+            FD_PID.store(-1, Ordering::Relaxed);
+        })
     }
 
     ui.run().unwrap();

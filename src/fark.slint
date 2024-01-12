@@ -6,13 +6,15 @@ export component Fark inherits Window {
     height: 500px;
     callback show-open-dialog;
     callback search;
+    callback stop_search;
     callback current-row-changed(int);
-
 
     in property file_name <=> file_name.text;
     in property path <=> path.text;
     in property<[[StandardListViewItem]]> rows: [];
     in-out property current-row <=> list.current-row;
+    in-out property <bool> started: false;
+    in-out property <string> status: @tr("Search");
 
     GroupBox {
         preferred_width: 600px;
@@ -60,8 +62,16 @@ export component Fark inherits Window {
                         HorizontalBox {
                             alignment: center;
                             search := Button {
-                                text: "Search";
-                                clicked => { root.search(); }
+                                text: root.started ? @tr("Stop") : @tr("Search");
+                                clicked => {
+                                    if (!root.started) {
+                                        root.started = true;
+                                        root.search();
+                                    } else {
+                                        root.stop-search();
+                                        root.started = false;
+                                    }
+                                }
                                 width: 20%;
                             }
                         }

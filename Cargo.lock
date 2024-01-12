@@ -1225,9 +1225,10 @@ name = "fark"
 version = "0.1.0"
 dependencies = [
  "eyre",
+ "once_cell",
  "open",
  "rfd",
- "send_wrapper",
+ "rustix 0.38.28",
  "serde",
  "serde_json",
  "slint",

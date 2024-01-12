@@ -1,6 +1,6 @@
 use std::{
     io::{BufRead, BufReader},
-    process::{Command, Stdio},
+    process::{Command, Stdio, Child},
 };
 
 use eyre::Result;
@@ -36,9 +36,9 @@ impl FdCommand {
         self.args.push(name.to_string());
     }
 
-    pub fn run<F>(&mut self, cb: F) -> Result<()>
+    pub fn run<F>(&mut self, cb: F) -> Result<Child>
     where
-        F: FnMut(&str) + Clone,
+        F: Fn(&str),
     {
         let mut cmd = Command::new("fd")
             .args(&self.args)
@@ -54,12 +54,10 @@ impl FdCommand {
             let stdout_lines = stdout_reader.lines();
 
             for i in stdout_lines.flatten() {
-                cb.clone()(&i);
+                cb(&i);
             }
         }
 
-        cmd.wait()?;
-
-        Ok(())
+        Ok(cmd)
     }
 }
