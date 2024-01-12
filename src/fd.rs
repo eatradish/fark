@@ -2,7 +2,7 @@ use std::{
     io::{BufRead, BufReader},
     process::{Command, Stdio},
     sync::{
-        atomic::{Ordering, AtomicBool},
+        atomic::{AtomicBool, Ordering},
         Arc, Mutex,
     },
     thread,
@@ -69,7 +69,11 @@ impl FdCommand {
                 let stdout_lines = stdout_reader.lines();
 
                 for i in stdout_lines.flatten() {
-                    cb(&i);
+                    if USING_STDOUT.load(Ordering::Relaxed) {
+                        cb(&i);
+                    } else {
+                        return Ok(());
+                    }
                 }
             }
         }

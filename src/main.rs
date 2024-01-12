@@ -119,11 +119,12 @@ fn fark_main() {
                         rows.push(items.clone().into());
                     })
                     .unwrap();
-                thread::sleep(Duration::from_millis(1));
+                thread::sleep(Duration::from_nanos(30));
             })
             .unwrap();
 
             FD_PID.store(-1, Ordering::SeqCst);
+            USING_STDOUT.store(false, Ordering::Relaxed);
             ui_week_clone_2
                 .upgrade_in_event_loop(|w| w.set_started(false))
                 .unwrap();
