@@ -1,6 +1,6 @@
 use std::{
     io::{BufRead, BufReader},
-    process::{Command, Stdio, Child},
+    process::{Child, Command, Stdio},
 };
 
 use eyre::Result;
@@ -28,7 +28,6 @@ impl FdCommand {
         if self.args.contains(&"--glob".to_string()) && !b {
             let index = self.args.iter().position(|x| x == "--glob").unwrap();
             self.args.remove(index);
-            return;
         }
     }
 
@@ -45,10 +44,7 @@ impl FdCommand {
             .stdout(Stdio::piped())
             .spawn()?;
         {
-            let stdout = cmd
-                .stdout
-                .take()
-                .unwrap();
+            let stdout = cmd.stdout.take().unwrap();
 
             let stdout_reader = BufReader::new(stdout);
             let stdout_lines = stdout_reader.lines();

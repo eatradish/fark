@@ -44,7 +44,7 @@ fn main() {
     ui.on_search(move || {
         let ui = ui_week.unwrap();
         let rows = ui.get_rows();
-        let rows_rc = ModelRc::from(rows.clone());
+        let rows_rc = rows.clone();
         let rows = rows_rc
             .as_any()
             .downcast_ref::<VecModel<slint::ModelRc<StandardListViewItem>>>()
@@ -76,7 +76,7 @@ fn main() {
                             }
 
                             let rows = w.get_rows();
-                            let rows_rc = ModelRc::from(rows.clone());
+                            let rows_rc = rows.clone();
                             let rows = rows_rc
                                 .as_any()
                                 .downcast_ref::<VecModel<slint::ModelRc<StandardListViewItem>>>()
