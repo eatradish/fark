@@ -1,10 +1,13 @@
 mod fd;
+mod tray;
 
+use eyre::Result;
 use rfd::FileDialog;
 use rustix::process::{kill_process, Signal};
 use rustix::thread::Pid;
 use slint::Model;
 use slint::{ModelRc, StandardListViewItem, VecModel};
+use std::process::Command;
 use std::sync::atomic::{AtomicI32, Ordering};
 use std::time::Duration;
 use std::{env, rc::Rc, thread};
@@ -15,7 +18,40 @@ slint::slint!(import { Fark } from "./src/fark.slint";);
 
 static FD_PID: AtomicI32 = AtomicI32::new(-1);
 
+fn start_process(command_args: Vec<String>) -> Result<()> {
+    // 获取当前可执行文件的路径
+    let current_exe = std::env::current_exe()?;
+
+    // 启动新进程并传递命令行参数
+    Command::new(current_exe).args(&command_args).spawn()?;
+
+    Ok(())
+}
+
+pub fn open_app() {
+    let mut args = std::env::args().collect::<Vec<_>>();
+    args.remove(0);
+    args.push("window".to_string());
+
+    let _ = start_process(args);
+}
+
 fn main() {
+    let mut args = std::env::args().skip(1);
+
+    if args.next().is_some() {
+        fark_main();
+        return;
+    }
+
+    //打开app
+    open_app();
+
+    //打开图标
+    tray::main().unwrap();
+}
+
+fn fark_main() {
     let ui = Fark::new().unwrap();
     let current_dir = env::current_dir()
         .map(|x| x.display().to_string())
