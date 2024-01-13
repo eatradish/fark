@@ -18,10 +18,10 @@ use crate::open_app;
 pub static FARK_PROCESS: Lazy<Arc<Mutex<Vec<u32>>>> =
     Lazy::new(|| Arc::new(Mutex::new(Vec::new())));
 
-const ICON: &[u8] = include_bytes!("../icon.png");
+// const ICON: &[u8] = include_bytes!("../icon.png");
 
 pub fn main() -> Result<()> {
-    let icon = load_icon()?;
+    // let icon = load_icon()?;
 
     let event_loop = EventLoopBuilder::new().build();
 
@@ -35,7 +35,7 @@ pub fn main() -> Result<()> {
         TrayIconBuilder::new()
             .with_menu(Box::new(menu))
             .with_tooltip("Fark")
-            .with_icon(icon)
+            // .with_icon(icon)
             .build()?,
     );
 
@@ -72,13 +72,13 @@ pub fn main() -> Result<()> {
     });
 }
 
-fn load_icon() -> Result<Icon>{
-    let (icon_rgba, icon_width, icon_height) = {
-        let image = image::load_from_memory_with_format(ICON, image::ImageFormat::Png)?.into_rgba8();
-        let (width, height) = image.dimensions();
-        let rgba = image.into_raw();
-        (rgba, width, height)
-    };
+// fn load_icon() -> Result<Icon>{
+//     let (icon_rgba, icon_width, icon_height) = {
+//         let image = image::load_from_memory_with_format(ICON, image::ImageFormat::Png)?.into_rgba8();
+//         let (width, height) = image.dimensions();
+//         let rgba = image.into_raw();
+//         (rgba, width, height)
+//     };
 
-    Ok(tray_icon::Icon::from_rgba(icon_rgba, icon_width, icon_height)?)
-}
+//     Ok(tray_icon::Icon::from_rgba(icon_rgba, icon_width, icon_height)?)
+// }

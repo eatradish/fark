@@ -77,23 +77,14 @@ fn fark_main() {
             .downcast_ref::<VecModel<slint::ModelRc<StandardListViewItem>>>()
             .expect("We know we set a VecModel earlier");
 
-        if rows.row_count() > 0 {
-            for _ in 0..rows.row_count() {
-                rows.remove(0);
-            }
-        }
+        rows.set_vec(vec![]);
 
         let name = ui.get_file_name();
         let path = ui.get_path();
         let mut fd = FdCommand::new();
         fd.set_path(&path);
         fd.file_name(&name);
-
-        if ui.get_glob() {
-            fd.glob(true);
-        } else {
-            fd.glob(false);
-        }
+        fd.glob(ui.get_glob());
 
         let ui_week = ui.as_weak();
         thread::spawn(move || {
