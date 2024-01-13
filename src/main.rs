@@ -99,6 +99,7 @@ fn fark_main() {
                         if !w.get_started() {
                             return;
                         }
+
                         let rows = w.get_rows();
                         let rows_rc = rows.clone();
                         let rows = rows_rc
@@ -171,9 +172,9 @@ fn main() {
         return;
     }
 
-    //打开app
+    // 打开app
     open_app();
 
-    //打开图标
+    // 打开图标
     tray::main().unwrap();
 }

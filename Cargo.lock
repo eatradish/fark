@@ -1363,6 +1363,7 @@ name = "fark"
 version = "0.1.0"
 dependencies = [
  "eyre",
+ "global-hotkey",
  "image",
  "once_cell",
  "open",
@@ -1904,6 +1905,20 @@ name = "glob"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
+
+[[package]]
+name = "global-hotkey"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d505f007b733fc3b3261ca0710e7e689411422ace5f5b2a63a14d8596159db23"
+dependencies = [
+ "crossbeam-channel",
+ "keyboard-types",
+ "once_cell",
+ "thiserror",
+ "windows-sys 0.52.0",
+ "x11-dl",
+]
 
 [[package]]
 name = "glow"
