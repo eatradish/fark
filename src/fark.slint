@@ -14,8 +14,8 @@ export component Fark inherits Window {
     in property<[[StandardListViewItem]]> rows: [];
     in-out property current-row <=> list.current-row;
     in-out property <bool> started: false;
-    in-out property <string> status: @tr("Search");
     in-out property glob <=> glob.checked;
+    in-out property case <=> case.checked;
 
     GroupBox {
         preferred_width: 600px;
@@ -77,6 +77,9 @@ export component Fark inherits Window {
                             }
                             glob := CheckBox {
                                 text: @tr("Glob");
+                            }
+                            case := CheckBox {
+                                text: @tr("Case sensitive");
                             }
                         }
                     }

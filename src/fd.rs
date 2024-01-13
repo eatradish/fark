@@ -43,6 +43,22 @@ impl FdCommand {
         self.args.push(name.to_string());
     }
 
+    pub fn case_sensitive(&mut self, b: bool) {
+        if b && !self.args.contains(&"--case-sensitive".to_string()) {
+            self.args.push("--case-sensitive".to_string());
+            return;
+        }
+
+        if !b && self.args.contains(&"--case-sensitive".to_string()) {
+            let index = self
+                .args
+                .iter()
+                .position(|x| x == "--case-sensitive")
+                .unwrap();
+            self.args.remove(index);
+        }
+    }
+
     pub fn run<F: Fn(&str)>(&mut self, cb: F) -> Result<()> {
         let cmd = Command::new("fd")
             .args(&self.args)
