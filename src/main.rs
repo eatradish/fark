@@ -8,7 +8,9 @@ use rustix::process::{kill_process, Signal};
 use rustix::thread::Pid;
 use slint::Model;
 use slint::{ModelRc, StandardListViewItem, VecModel};
+use std::path::Path;
 use std::process::Command;
+use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicI32, Ordering};
 use std::time::Duration;
 use std::{env, rc::Rc, thread};
@@ -67,9 +69,13 @@ fn fark_main() {
     let rows_rc = ModelRc::from(rows.clone());
     ui.set_rows(rows_rc);
 
+    let paths = Arc::new(Mutex::new(Vec::new()));
+    let paths_clone = paths.clone();
+
     let ui_week = ui.as_weak();
     ui.on_search(move || {
         let ui = ui_week.unwrap();
+        ui.set_count(0);
         let rows = ui.get_rows();
         let rows_rc = rows.clone();
         let rows = rows_rc
@@ -89,15 +95,18 @@ fn fark_main() {
         fd.unrestricted(ui.get_unrestricted());
 
         let ui_week = ui.as_weak();
+
+        let paths_clone = paths.clone();
+
         thread::spawn(move || {
             let ui_week_clone = ui_week.clone();
             let ui_week_clone_2 = ui_week.clone();
 
             let mut count = 0;
-
             fd.run(move |path| {
                 let path = path.to_string();
                 count += 1;
+                let paths = paths_clone.clone();
                 ui_week_clone
                     .upgrade_in_event_loop(move |w| {
                         if !w.get_started() {
@@ -112,8 +121,27 @@ fn fark_main() {
                             .expect("We know we set a VecModel earlier");
 
                         let items = Rc::new(VecModel::default());
-                        items.push(StandardListViewItem::from(slint::format!("{}", path)));
+                        let path = Path::new(&path);
+                        let file_name = path
+                            .file_name()
+                            .map(|x| x.to_string_lossy())
+                            .unwrap_or_default();
+
+                        let parent = path
+                            .parent()
+                            .unwrap_or_else(|| Path::new(""))
+                            .display()
+                            .to_string();
+
+                        items.push(StandardListViewItem::from(slint::format!("{}", file_name)));
+                        items.push(StandardListViewItem::from(slint::format!("{}", parent)));
                         rows.push(items.clone().into());
+
+                        {
+                            let mut paths = paths.lock().unwrap();
+                            paths.push(path.display().to_string());
+                        }
+
                         w.set_count(count);
                     })
                     .unwrap();
@@ -132,13 +160,10 @@ fn fark_main() {
     let ui_week = ui.as_weak();
     {
         let ui_week = ui_week.unwrap();
-        let rows = ui_week.get_rows();
-
         ui_week.on_current_row_changed(move |i| {
-            let entry = rows.row_data(i as usize).expect("1");
-            let entry = entry.row_data(0).expect("2");
-            let path = &entry.text;
-            let _ = open::that_detached(path.to_string());
+            let paths = paths_clone.lock().unwrap();
+            let entry = &paths[i as usize];
+            let _ = open::that_detached(entry);
         });
     }
 

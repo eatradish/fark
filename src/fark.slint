@@ -97,7 +97,8 @@ export component Fark inherits Window {
                             columns: [
                                 // { title: "Name" },
                                 // { title: "Type" },
-                                { title: "Path" },
+                                { title: @tr("Name") },
+                                { title: @tr("Parent") },
                             ];
                             rows: root.rows;
                             current-row-changed(int) => { current-row-changed(int); }
