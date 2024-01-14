@@ -3,7 +3,7 @@ import { GroupBox, TabWidget, VerticalBox, HorizontalBox, Button, LineEdit, Grid
 export component Fark inherits Window {
     title: "Fark";
     icon:  @image-url("../icon2.png");
-    width: 600px;
+    width: 800px;
     height: 500px;
     callback show-open-dialog;
     callback search;
@@ -13,6 +13,7 @@ export component Fark inherits Window {
     in property file_name <=> file_name.text;
     in property path <=> path.text;
     in property<[[StandardListViewItem]]> rows: [];
+    in property <int> count: 0;
     in-out property current-row <=> list.current-row;
     in-out property <bool> started: false;
     in-out property glob <=> glob.checked;
@@ -20,7 +21,7 @@ export component Fark inherits Window {
     in-out property unrestricted <=> unrestricted.checked;
 
     GroupBox {
-        preferred_width: 600px;
+        preferred_width: 800px;
         preferred_height: 500px;
         TabWidget {
             Tab {
@@ -92,7 +93,7 @@ export component Fark inherits Window {
                     Row {
                         list := StandardTableView {
                             width: 90%;
-                            height: 60%;
+                            // height: 60%;
                             columns: [
                                 // { title: "Name" },
                                 // { title: "Type" },
@@ -100,6 +101,12 @@ export component Fark inherits Window {
                             ];
                             rows: root.rows;
                             current-row-changed(int) => { current-row-changed(int); }
+                        }
+                    }
+
+                    Row {
+                        Text {
+                            text: @tr("Found ") + root.count + @tr(" results");
                         }
                     }
                 }

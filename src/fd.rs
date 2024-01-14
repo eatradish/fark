@@ -75,7 +75,7 @@ impl FdCommand {
         }
     }
 
-    pub fn run<F: Fn(&str)>(&mut self, cb: F) -> Result<()> {
+    pub fn run<F: FnMut(&str)>(&mut self, mut cb: F) -> Result<()> {
         let cmd = Command::new("fd")
             .args(&self.args)
             .stdout(Stdio::piped())

@@ -93,8 +93,11 @@ fn fark_main() {
             let ui_week_clone = ui_week.clone();
             let ui_week_clone_2 = ui_week.clone();
 
+            let mut count = 0;
+
             fd.run(move |path| {
                 let path = path.to_string();
+                count += 1;
                 ui_week_clone
                     .upgrade_in_event_loop(move |w| {
                         if !w.get_started() {
@@ -111,6 +114,7 @@ fn fark_main() {
                         let items = Rc::new(VecModel::default());
                         items.push(StandardListViewItem::from(slint::format!("{}", path)));
                         rows.push(items.clone().into());
+                        w.set_count(count);
                     })
                     .unwrap();
                 thread::sleep(Duration::from_nanos(2400));
