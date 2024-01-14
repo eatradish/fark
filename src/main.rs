@@ -10,8 +10,8 @@ use slint::Model;
 use slint::{ModelRc, StandardListViewItem, VecModel};
 use std::path::Path;
 use std::process::Command;
-use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicI32, Ordering};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::{env, rc::Rc, thread};
 use tray::FARK_PROCESS;
@@ -71,11 +71,18 @@ fn fark_main() {
 
     let paths = Arc::new(Mutex::new(Vec::new()));
     let paths_clone = paths.clone();
+    let paths_clone_2 = paths.clone();
 
     let ui_week = ui.as_weak();
     ui.on_search(move || {
         let ui = ui_week.unwrap();
         ui.set_count(0);
+
+        {
+            let mut paths = paths_clone_2.lock().unwrap();
+            paths.clear();
+        }
+
         let rows = ui.get_rows();
         let rows_rc = rows.clone();
         let rows = rows_rc
