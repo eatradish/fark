@@ -17,6 +17,7 @@ export component Fark inherits Window {
     in-out property <bool> started: false;
     in-out property glob <=> glob.checked;
     in-out property case <=> case.checked;
+    in-out property unrestricted <=> unrestricted.checked;
 
     GroupBox {
         preferred_width: 600px;
@@ -81,6 +82,9 @@ export component Fark inherits Window {
                             }
                             case := CheckBox {
                                 text: @tr("Case sensitive");
+                            }
+                            unrestricted := CheckBox {
+                                text: @tr("Unrestricted");
                             }
                         }
                     }

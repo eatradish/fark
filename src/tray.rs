@@ -55,7 +55,7 @@ pub fn main() -> Result<()> {
 
         if let Ok(MenuEvent { id }) = menu_channel.try_recv() {
             if id == open.id() {
-                // 打开app
+                // 打开 app
                 open_app();
             } else {
                 // 退出

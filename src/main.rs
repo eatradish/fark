@@ -86,6 +86,7 @@ fn fark_main() {
         fd.file_name(&name);
         fd.glob(ui.get_glob());
         fd.case_sensitive(ui.get_case());
+        fd.unrestricted(ui.get_unrestricted());
 
         let ui_week = ui.as_weak();
         thread::spawn(move || {

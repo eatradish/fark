@@ -59,6 +59,22 @@ impl FdCommand {
         }
     }
 
+    pub fn unrestricted(&mut self, b: bool) {
+        if !self.args.contains(&"--unrestricted".to_string()) && b {
+            self.args.push("--unrestricted".to_string());
+            return;
+        }
+
+        if self.args.contains(&"--unrestricted".to_string()) && !b {
+            let index = self
+                .args
+                .iter()
+                .position(|x| x == "--unrestricted")
+                .unwrap();
+            self.args.remove(index);
+        }
+    }
+
     pub fn run<F: Fn(&str)>(&mut self, cb: F) -> Result<()> {
         let cmd = Command::new("fd")
             .args(&self.args)
