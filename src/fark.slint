@@ -3,8 +3,8 @@ import { GroupBox, TabWidget, VerticalBox, HorizontalBox, Button, LineEdit, Grid
 export component Fark inherits Window {
     title: "Fark";
     icon:  @image-url("../icon2.png");
-    width: 800px;
-    height: 500px;
+    width: 1000px;
+    height: 600px;
     callback show-open-dialog;
     callback search;
     callback stop_search;
@@ -23,8 +23,8 @@ export component Fark inherits Window {
      
 
     GroupBox {
-        preferred_width: 800px;
-        preferred_height: 500px;
+        preferred_width: 1000px;
+        preferred_height: 600px;
         TabWidget {
             Tab {
                 title: @tr("Name/Location");
@@ -94,10 +94,9 @@ export component Fark inherits Window {
                     Row {
                         list := StandardTableView {
                             width: 98%;
-                            // height: 60%;
                             columns: [
-                                { title: @tr("Name") },
-                                { title: @tr("Parent") },
+                                { title: @tr("Name"), width: 370px },
+                                { title: @tr("Parent"), width: 410px },
                                 { title: @tr("Size") },
                                 // { title: @tr("MIME-type") },
                             ];

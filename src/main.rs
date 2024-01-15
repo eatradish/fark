@@ -73,6 +73,7 @@ fn fark_main() {
     let paths = Arc::new(Mutex::new(Vec::new()));
     let paths_clone = paths.clone();
     let paths_clone_2 = paths.clone();
+    let paths_clone_3 = paths.clone();
 
     let ui_week = ui.as_weak();
     ui.on_search(move || {
@@ -103,7 +104,6 @@ fn fark_main() {
         fd.unrestricted(ui.get_unrestricted());
 
         let ui_week = ui.as_weak();
-
         let paths_clone = paths.clone();
 
         thread::spawn(move || {
@@ -146,18 +146,24 @@ fn fark_main() {
                             .display()
                             .to_string();
 
+                        let display_parent =  if console::measure_text_width(&parent) > 61 {
+                            console::truncate_str(&parent, 61, "...").to_string()
+                        } else {
+                            parent.clone()
+                        };
+
                         let size = path.metadata().map(|x| x.len()).unwrap_or(0);
                         let size = human_size(size);
 
                         items.push(StandardListViewItem::from(slint::format!("{}", file_name)));
-                        items.push(StandardListViewItem::from(slint::format!("{}", parent)));
+                        items.push(StandardListViewItem::from(slint::format!("{}", display_parent)));
                         items.push(StandardListViewItem::from(slint::format!("{}", size)));
 
                         rows.push(items.clone().into());
 
                         {
                             let mut paths = paths.lock().unwrap();
-                            paths.push(path.display().to_string());
+                            paths.push((path.display().to_string(), parent));
                         }
 
                         w.set_count(count);
@@ -176,25 +182,18 @@ fn fark_main() {
     });
 
     let ui_week = ui.as_weak();
-    let ui_week_clone = ui_week.clone();
     {
         let ui_week = ui_week.unwrap();
         ui_week.on_open_file(move |i| {
             let paths = paths_clone.lock().unwrap();
-            let entry = &paths[i as usize];
+            let entry = &paths[i as usize].0;
             let _ = open::that_detached(entry);
         });
 
         ui_week.on_open_directory(move |i| {
-            let rows = ui_week_clone.unwrap().get_rows();
-            let rows_rc = rows.clone();
-            let rows = rows_rc
-                .as_any()
-                .downcast_ref::<VecModel<slint::ModelRc<StandardListViewItem>>>()
-                .expect("We know we set a VecModel earlier");
-            let entry = rows.row_data(i as usize).unwrap();
-            let path = entry.row_data(1).unwrap().text;
-            let _ = open::that_detached(path.to_string());
+            let paths = paths_clone_3.lock().unwrap();
+            let entry = &paths[i as usize].1;
+            let _ = open::that_detached(entry);
         });
     }
 
