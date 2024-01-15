@@ -129,10 +129,15 @@ fn fark_main() {
 
                         let items = Rc::new(VecModel::default());
                         let path = Path::new(&path);
-                        let file_name = path
+                        let mut file_name = path
                             .file_name()
                             .map(|x| x.to_string_lossy())
-                            .unwrap_or_default();
+                            .unwrap_or_default()
+                            .to_string();
+
+                        if console::measure_text_width(&file_name) > 50 {
+                            file_name = console::truncate_str(&file_name, 50, "...").to_string();
+                        }
 
                         let parent = path
                             .parent()
@@ -165,12 +170,25 @@ fn fark_main() {
     });
 
     let ui_week = ui.as_weak();
+    let ui_week_clone = ui_week.clone();
     {
         let ui_week = ui_week.unwrap();
-        ui_week.on_current_row_changed(move |i| {
+        ui_week.on_open_file(move |i| {
             let paths = paths_clone.lock().unwrap();
             let entry = &paths[i as usize];
             let _ = open::that_detached(entry);
+        });
+
+        ui_week.on_open_directory(move |i| {
+            let rows = ui_week_clone.unwrap().get_rows();
+            let rows_rc = rows.clone();
+            let rows = rows_rc
+                .as_any()
+                .downcast_ref::<VecModel<slint::ModelRc<StandardListViewItem>>>()
+                .expect("We know we set a VecModel earlier");
+            let entry = rows.row_data(i as usize).unwrap();
+            let path = entry.row_data(1).unwrap().text;
+            let _ = open::that_detached(path.to_string());
         });
     }
 

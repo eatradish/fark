@@ -8,7 +8,8 @@ export component Fark inherits Window {
     callback show-open-dialog;
     callback search;
     callback stop_search;
-    callback current-row-changed(int);
+    callback open_file(int);
+    callback open_directory(int);
 
     in property file_name <=> file_name.text;
     in property path <=> path.text;
@@ -19,6 +20,7 @@ export component Fark inherits Window {
     in-out property glob <=> glob.checked;
     in-out property case <=> case.checked;
     in-out property unrestricted <=> unrestricted.checked;
+     
 
     GroupBox {
         preferred_width: 800px;
@@ -33,11 +35,11 @@ export component Fark inherits Window {
                                 vertical-alignment: center;
                                 horizontal-alignment: left;
                                 text: @tr("File Name:");
-                                width: 15%;
+                                width: 10%;
                             }
                             
                             file_name := LineEdit {
-                                width: 75%;
+                                width: 83%;
                             }
                         }
                     }
@@ -48,10 +50,10 @@ export component Fark inherits Window {
                                 vertical-alignment: center;
                                 horizontal-alignment: left;
                                 text: @tr("Location:");
-                                width: 15%;
+                                width: 10%;
                             }
                             path := LineEdit {
-                                width: 60%;
+                                width: 68%;
                             }
                             open_button := Button {
                                 text: @tr("Browse...");
@@ -84,21 +86,31 @@ export component Fark inherits Window {
                                 text: @tr("Case sensitive");
                             }
                             unrestricted := CheckBox {
-                                text: @tr("Unrestricted");
+                                text: @tr("Hidden files and folders");
                             }
                         }
                     }
 
                     Row {
                         list := StandardTableView {
-                            width: 90%;
+                            width: 98%;
                             // height: 60%;
                             columns: [
                                 { title: @tr("Name") },
                                 { title: @tr("Parent") },
                             ];
                             rows: root.rows;
-                            current-row-changed(int) => { current-row-changed(int); }
+                            row-pointer-event(int, PointerEvent, point) => { 
+                                if (PointerEvent.kind == PointerEventKind.down) {
+                                    if (PointerEvent.button == PointerEventButton.left) {
+                                        open-file(int);
+                                    }
+
+                                    if (PointerEvent.button == PointerEventButton.right) {
+                                        open-directory(int);
+                                    }
+                                }
+                            }
                         }
                     }
 
