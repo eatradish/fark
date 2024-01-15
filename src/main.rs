@@ -15,6 +15,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::{env, rc::Rc, thread};
 use tray::FARK_PROCESS;
+use number_prefix::NumberPrefix;
 
 use crate::fd::FdCommand;
 
@@ -145,8 +146,13 @@ fn fark_main() {
                             .display()
                             .to_string();
 
+                        let size = path.metadata().map(|x| x.len()).unwrap_or(0);
+                        let size = human_size(size);
+
                         items.push(StandardListViewItem::from(slint::format!("{}", file_name)));
                         items.push(StandardListViewItem::from(slint::format!("{}", parent)));
+                        items.push(StandardListViewItem::from(slint::format!("{}", size)));
+
                         rows.push(items.clone().into());
 
                         {
@@ -217,6 +223,14 @@ fn fark_main() {
     }
 
     ui.run().unwrap();
+}
+
+#[inline]
+fn human_size(size: u64) -> String {
+    match NumberPrefix::binary(size as f64) {
+        NumberPrefix::Standalone(bytes) => format!("{bytes} B"),
+        NumberPrefix::Prefixed(prefix, n) => format!("{n:.1} {prefix}B"),
+    }
 }
 
 fn main() {
