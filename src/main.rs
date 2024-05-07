@@ -51,12 +51,12 @@ fn fark_main() {
         .map(|x| x.display().to_string())
         .unwrap_or_else(|_| "".to_string());
 
-    let ui_week = ui.as_weak();
-    let ui_week_clone = ui_week.clone();
+    let ui_weak = ui.as_weak();
+    let ui_weak_clone = ui_weak.clone();
 
     ui.set_path(current_dir.into());
     ui.on_show_open_dialog(move || {
-        ui_week_clone
+        ui_weak_clone
             .upgrade_in_event_loop(move |w| {
                 let dir = FileDialog::new().pick_folder();
                 if let Some(dir) = dir {
@@ -75,9 +75,9 @@ fn fark_main() {
     let paths_clone_2 = paths.clone();
     let paths_clone_3 = paths.clone();
 
-    let ui_week = ui.as_weak();
+    let ui_weak = ui.as_weak();
     ui.on_search(move || {
-        let ui = ui_week.unwrap();
+        let ui = ui_weak.unwrap();
         ui.set_count(0);
 
         {
@@ -103,19 +103,19 @@ fn fark_main() {
         fd.case_sensitive(ui.get_case());
         fd.unrestricted(ui.get_unrestricted());
 
-        let ui_week = ui.as_weak();
+        let ui_weak = ui.as_weak();
         let paths_clone = paths.clone();
 
         thread::spawn(move || {
-            let ui_week_clone = ui_week.clone();
-            let ui_week_clone_2 = ui_week.clone();
+            let ui_weak_clone = ui_weak.clone();
+            let ui_weak_clone_2 = ui_weak.clone();
 
             let mut count = 0;
             fd.run(move |path| {
                 let path = path.to_string();
                 count += 1;
                 let paths = paths_clone.clone();
-                ui_week_clone
+                ui_weak_clone
                     .upgrade_in_event_loop(move |w| {
                         if !w.get_started() {
                             return;
@@ -175,33 +175,33 @@ fn fark_main() {
 
             FD_PID.store(-1, Ordering::SeqCst);
             USING_STDOUT.store(false, Ordering::Relaxed);
-            ui_week_clone_2
+            ui_weak_clone_2
                 .upgrade_in_event_loop(|w| w.set_started(false))
                 .unwrap();
         });
     });
 
-    let ui_week = ui.as_weak();
+    let ui_weak = ui.as_weak();
     {
-        let ui_week = ui_week.unwrap();
-        ui_week.on_open_file(move |i| {
+        let ui_weak = ui_weak.unwrap();
+        ui_weak.on_open_file(move |i| {
             let paths = paths_clone.lock().unwrap();
             let entry = &paths[i as usize].0;
             let _ = open::that_detached(entry);
         });
 
-        ui_week.on_open_directory(move |i| {
+        ui_weak.on_open_directory(move |i| {
             let paths = paths_clone_3.lock().unwrap();
             let entry = &paths[i as usize].1;
             let _ = open::that_detached(entry);
         });
     }
 
-    let ui_week = ui.as_weak();
-    let ui_week_clone = ui_week.clone();
+    let ui_weak = ui.as_weak();
+    let ui_weak_clone = ui_weak.clone();
     {
-        let ui_week = ui_week.unwrap();
-        ui_week.on_stop_search(move || {
+        let ui_weak = ui_weak.unwrap();
+        ui_weak.on_stop_search(move || {
             let pid = FD_PID.load(Ordering::SeqCst);
             let pid = Pid::from_raw(pid).unwrap();
             thread::spawn(move || {
@@ -212,7 +212,7 @@ fn fark_main() {
 
             loop {
                 if !USING_STDOUT.load(Ordering::Relaxed) {
-                    ui_week_clone
+                    ui_weak_clone
                         .upgrade_in_event_loop(|w| w.set_started(false))
                         .unwrap();
                     break;
