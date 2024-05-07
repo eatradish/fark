@@ -1,4 +1,6 @@
 use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::Duration;
 
 use eyre::Result;
 use global_hotkey::{GlobalHotKeyManager, hotkey::HotKey};
@@ -83,6 +85,8 @@ pub fn main() -> Result<()> {
                 open_app();
             }
         }
+
+        thread::sleep(Duration::from_millis(100));
     });
 }
 
